@@ -1,0 +1,1101 @@
+<!DOCTYPE html>
+<html lang="id" class="antialiased">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NihongoFlow — Spaced Repetition Flashcards</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            jp: ['"Noto Sans JP"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .perspective-1000 { perspective: 1000px; }
+    .preserve-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col">
+
+  <!-- Top Navbar (SaaS Header) -->
+  <header class="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="switchView('dashboard')">
+        <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-jp font-bold text-lg shadow-sm shadow-indigo-500/30">
+          語
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">Nihongo<span class="text-indigo-600 dark:text-indigo-400">Flow</span></span>
+          <span class="hidden sm:inline-block ml-2 text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200/60 dark:border-indigo-800">SRS Anki Engine</span>
+        </div>
+      </div>
+
+      <nav class="flex items-center gap-1 sm:gap-2">
+        <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white">
+          Dek Belajar
+        </button>
+        <button onclick="switchView('browse')" id="nav-browse" class="nav-btn px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          Daftar Kartu
+        </button>
+        <div class="h-5 w-px bg-slate-200 dark:bg-slate-800 mx-1"></div>
+        <button onclick="toggleDarkMode()" title="Ganti Tema" class="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <svg id="sun-icon" class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+          <svg id="moon-icon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+
+    <!-- VIEW 1: DASHBOARD -->
+    <section id="view-dashboard" class="space-y-8">
+      <!-- Overview Stats -->
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Ringkasan Belajar</h1>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Algoritma Spaced Repetition menjadwalkan kartu tepat sebelum Anda melupakannya.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="resetAllProgress()" class="text-xs font-medium px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 dark:hover:bg-rose-950/40 dark:hover:text-rose-400 transition-colors">
+            Reset Progres
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Siap Diulang (Due)</div>
+          <div id="stat-due" class="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-2">0</div>
+          <div class="text-xs text-slate-400 mt-1">Kartu hari ini</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Kartu Baru</div>
+          <div id="stat-new" class="text-3xl font-bold text-sky-600 dark:text-sky-400 mt-2">0</div>
+          <div class="text-xs text-slate-400 mt-1">Belum dipelajari</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Sedang Dipelajari</div>
+          <div id="stat-learning" class="text-3xl font-bold text-amber-500 mt-2">0</div>
+          <div class="text-xs text-slate-400 mt-1">Interval &lt; 7 hari</div>
+        </div>
+        <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Dikuasai (Mature)</div>
+          <div id="stat-mastered" class="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-2">0</div>
+          <div class="text-xs text-slate-400 mt-1">Interval &ge; 7 hari</div>
+        </div>
+      </div>
+
+      <!-- Deck Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold">Pilih Dek Materi</h2>
+          <button onclick="startStudy('ALL')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-sm shadow-indigo-500/20 transition-all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            Belajar Semua Dek
+          </button>
+        </div>
+
+        <div id="decks-container" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <!-- Decks injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: STUDY SESSION (ANKI SRS MODE) -->
+    <section id="view-study" class="hidden max-w-2xl mx-auto">
+      <!-- Top Study Bar -->
+      <div class="flex items-center justify-between mb-6">
+        <button onclick="switchView('dashboard')" class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+          Kembali ke Dek
+        </button>
+        <div class="flex items-center gap-3 text-xs font-semibold">
+          <span class="px-2.5 py-1 rounded-md bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400" title="Kartu Baru">Baru: <span id="queue-new">0</span></span>
+          <span class="px-2.5 py-1 rounded-md bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400" title="Sedang Dipelajari">Belajar: <span id="queue-learn">0</span></span>
+          <span class="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400" title="Ulasan">Ulang: <span id="queue-review">0</span></span>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden mb-6">
+        <div id="study-progress-bar" class="h-full bg-indigo-600 transition-all duration-300" style="width: 0%"></div>
+      </div>
+
+      <!-- Flashcard Container -->
+      <div id="flashcard-area">
+        <div id="flashcard-box" onclick="flipCard()" class="cursor-pointer bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-lg shadow-slate-200/40 dark:shadow-none min-h-[380px] sm:min-h-[420px] p-6 sm:p-10 flex flex-col justify-between transition-all hover:border-indigo-300 dark:hover:border-indigo-700 select-none relative">
+          
+          <!-- Card Header Meta -->
+          <div class="flex items-center justify-between text-xs text-slate-400">
+            <span id="card-deck-badge" class="font-medium px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Dek</span>
+            <span id="card-status-badge" class="font-medium">Baru</span>
+          </div>
+
+          <!-- Front Content -->
+          <div id="card-front" class="my-auto text-center py-6">
+            <div id="card-front-text" class="font-jp text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white tracking-wide leading-snug">
+              安全帯
+            </div>
+            <p class="text-xs text-slate-400 mt-6">Klik kartu atau tekan <kbd class="px-1.5 py-0.5 text-[11px] bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded">Spasi</kbd> untuk membalik</p>
+          </div>
+
+          <!-- Back Content (Hidden until flipped) -->
+          <div id="card-back" class="hidden my-auto pt-4 border-t border-slate-100 dark:border-slate-800 animate-fadeIn">
+            <!-- Injected dynamically depending on card type -->
+          </div>
+
+          <!-- Bottom Hint -->
+          <div class="text-center text-[11px] text-slate-400 pt-2">
+            <span id="card-number-label">Kartu #1</span>
+          </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="mt-6">
+          <!-- Show Answer Button -->
+          <div id="controls-front">
+            <button onclick="flipCard()" class="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-base shadow-md shadow-indigo-500/20 transition-all">
+              Tampilkan Jawaban <span class="text-indigo-200 text-xs font-normal ml-1">(Spasi)</span>
+            </button>
+          </div>
+
+          <!-- Anki 4-Button SRS Rating -->
+          <div id="controls-back" class="hidden grid grid-cols-4 gap-2.5 sm:gap-3">
+            <button onclick="rateCard(1)" class="flex flex-col items-center justify-center py-3 px-2 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/50 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800/80 text-rose-700 dark:text-rose-300 transition-all">
+              <span class="text-[11px] font-medium opacity-80 mb-0.5" id="int-1">&lt; 1 mnt</span>
+              <span class="font-bold text-sm sm:text-base">Lagi</span>
+              <span class="text-[10px] opacity-60 mt-0.5">[1]</span>
+            </button>
+            <button onclick="rateCard(2)" class="flex flex-col items-center justify-center py-3 px-2 rounded-2xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800/80 text-amber-700 dark:text-amber-300 transition-all">
+              <span class="text-[11px] font-medium opacity-80 mb-0.5" id="int-2">6 mnt</span>
+              <span class="font-bold text-sm sm:text-base">Sulit</span>
+              <span class="text-[10px] opacity-60 mt-0.5">[2]</span>
+            </button>
+            <button onclick="rateCard(3)" class="flex flex-col items-center justify-center py-3 px-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/80 text-emerald-700 dark:text-emerald-300 transition-all">
+              <span class="text-[11px] font-medium opacity-80 mb-0.5" id="int-3">10 mnt</span>
+              <span class="font-bold text-sm sm:text-base">Baik</span>
+              <span class="text-[10px] opacity-60 mt-0.5">[3]</span>
+            </button>
+            <button onclick="rateCard(4)" class="flex flex-col items-center justify-center py-3 px-2 rounded-2xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 dark:hover:bg-sky-900/60 border border-sky-200 dark:border-sky-800/80 text-sky-700 dark:text-sky-300 transition-all">
+              <span class="text-[11px] font-medium opacity-80 mb-0.5" id="int-4">4 hari</span>
+              <span class="font-bold text-sm sm:text-base">Mudah</span>
+              <span class="text-[10px] opacity-60 mt-0.5">[4]</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty / Finished State -->
+      <div id="study-complete" class="hidden bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-10 text-center space-y-4">
+        <div class="w-16 h-16 rounded-2xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto text-3xl">
+          🎉
+        </div>
+        <h2 class="text-2xl font-bold">Sesi Belajar Selesai!</h2>
+        <p class="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-sm">
+          Semua kartu yang dijadwalkan untuk dek ini telah Anda selesaikan. Kembali lagi nanti sesuai jadwal SRS, atau latih ulang sekarang.
+        </p>
+        <div class="pt-4 flex flex-wrap justify-center gap-3">
+          <button onclick="switchView('dashboard')" class="px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium text-sm transition-colors">
+            Kembali ke Dashboard
+          </button>
+          <button onclick="practiceAhead()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-sm transition-colors">
+            Latih Lagi (Cram Mode)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: BROWSE CARDS -->
+    <section id="view-browse" class="hidden space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight">Daftar Seluruh Kartu</h1>
+          <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Teks asli persis sesuai dengan 3 dokumen sumber Anda.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+          <select id="browse-deck-filter" onchange="renderBrowseTable()" class="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="ALL">Semua Dek</option>
+            <option value="larangan">Kanji Larangan LPKS X JAPAN</option>
+            <option value="katakerja">Perubahan Kata Kerja (Kel. I, II, III)</option>
+            <option value="kanjin5">KANJI N5</option>
+          </select>
+          <input type="text" id="browse-search" oninput="renderBrowseTable()" placeholder="Cari kanji, kana, atau arti..." class="px-3.5 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-full sm:w-64">
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th class="py-3.5 px-4">Kanji / Kosakata</th>
+                <th class="py-3.5 px-4">Bacaan / Konjugasi</th>
+                <th class="py-3.5 px-4">Arti</th>
+                <th class="py-3.5 px-4">Dek</th>
+                <th class="py-3.5 px-4 text-right">Status SRS</th>
+              </tr>
+            </thead>
+            <tbody id="browse-table-body" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // =========================================================================
+    // 1. DATABASE KARTU PERSIS SESUAI KETIGA FILE (TANPA MENGUBAH KALIMAT)
+    // =========================================================================
+
+    const DECKS = [
+      {
+        id: 'larangan',
+        title: 'Kanji Larangan LPKS X JAPAN',
+        subtitle: 'Tanda keselamatan kerja, larangan, dan status mesin',
+        badge: 'LPKS K3',
+        color: 'rose'
+      },
+      {
+        id: 'katakerja',
+        title: 'Perubahan Kata Kerja LPKS X JAPAN',
+        subtitle: 'Konjugasi Kelompok I, II, III (ます, て, Kamus, ない, た)',
+        badge: 'Konjugasi',
+        color: 'indigo'
+      },
+      {
+        id: 'kanjin5',
+        title: 'KANJI N5',
+        subtitle: 'Daftar lengkap kanji dan kosakata dasar N5',
+        badge: 'JLPT N5',
+        color: 'emerald'
+      }
+    ];
+
+    // File 1: Kanji Larangan LPKS X JAPAN.pdf (Exact text preserved)
+    const RAW_LARANGAN = [
+      ["安全带", "あんぜんたい", "Sabuk Pengaman"],
+      ["安全第一", "あんぜんだいいち", "Utamakan Keselamatan"],
+      ["安全通路", "あんぜんつうろ", "Jalur Aman"],
+      ["安全靴", "あんぜんぐつ", "Sepatu Keselamatan"],
+      ["安全標識", "あんぜんひょうしき", "Tanda Keselamatan Kerja"],
+      ["禁煙", "きんえん", "Dilarang Merokok"],
+      ["消火器", "しょうかき", "Alat Pemadam Api"],
+      ["保護帽", "ほごぼう", "Pelindung Kepala"],
+      ["喫煙所", "きつえんじょ", "Tempat Merokok"],
+      ["止まれ", "とまれ", "Berhenti"],
+      ["気を付けよ", "きをつけよ", "Marilah Berhati-hati"],
+      ["触るな", "さわるな", "Dilarang Menyentuh"],
+      ["救急箱", "きゅうきゅうばこ", "Kotak Obat Darurat"],
+      ["指差し呼称", "ゆびさしこしょう", "Penunjukan dengan Jari Sambil Menyebutkan"],
+      ["注水厳禁", "ちゅうすいげんきん", "Larangan Menyiram Air"],
+      ["火気厳禁", "かきげんきん", "Larangan Menyalakan Api"],
+      ["非常口", "ひじょうぐち", "Pintu Darurat"],
+      ["防塵マスク", "ぼうじんマスク", "Masker Pelindung"],
+      ["危険信号", "きけんしんごう", "Tanda Petunjuk Bahaya"],
+      ["危険", "きけん", "Bahaya"],
+      ["故障中", "こしょうちゅう", "Dalam Keadaan Rusak"],
+      ["故障", "こしょう", "Sedang Rusak"],
+      ["誘導標識[緑に白矢印]", "ゆうどうひょうしき", "Tanda Arah (Panah Putih Hijau)"],
+      ["禁止標識[赤]", "きんしひょうしき", "Tanda Larangan (Merah)"],
+      ["指示用心標識「緑」", "しじようじんひょうしき", "Tanda Penunjuk dan Perhatian (Hijau)"],
+      ["注意標識[黄]", "ちゅういひょうしき", "Tanda Hati-hati (Kuning)"],
+      ["救護 指導標識[黄]", "きゅうごしどうひょうしき", "Tanda Pertolongan dan Penunjuk (Kuning)"],
+      ["防火標識[赤]", "ぼうかひょうしき", "Tanda Pencegahan Kebakaran (Merah)"],
+      ["危険標識[橙]", "きけんひょうしき", "Tanda Bahaya (Oranye)"],
+      ["駐輪禁止", "ちゅうりんきんし", "Dilarang Parkir Sepeda"],
+      ["運転禁止", "うんてんきんし", "Dilarang Menghidupkan/Menjalankan"],
+      ["使用禁止", "しようきんし", "Dilarang Menggunakan"],
+      ["通行禁止", "つうこうきんし", "Dilarang Lewat"],
+      ["立入り禁止", "たちいりきんし", "Dilarang Masuk"],
+      ["持出し禁止", "もちだしきんし", "Dilarang Membawa Keluar"],
+      ["禁止", "きんし", "Larangan"],
+      ["測定中", "そくていちゅう", "Sedang Dalam Pengukuran"],
+      ["計測中", "けいそくちゅう", "Sedang Diukur"],
+      ["休止中", "きゅうしちゅう", "Mesin Sedang Berhenti / Mati"],
+      ["作業中", "さぎょうちゅう", "Sedang Dalam Pekerjaan"],
+      ["工事中", "こうじちゅう", "Dilarang Dibangun"],
+      ["組立中", "くみたてちゅう", "Masih Dalam Perakitan"],
+      ["点検中", "てんけんちゅう", "Sedang Diperiksa"],
+      ["修理中", "しゅうりちゅう", "Sedang Diperbaiki"],
+      ["稼働中", "かどうちゅう", "Mesin Sedang Jalan / Hidup"],
+      ["通電中", "つうでんちゅう", "Sedang Dialiri Listrik"],
+      ["解体中", "かいたいちゅう", "Sedang Dibongkar"],
+      ["停電作業中", "ていでんさぎょうちゅう", "Listrik Dimatikan Karena Sedang Ada Perbaikan"],
+      ["手洗励行", "てあらいれいこう", "Pelaksanaan Cuci Tangan"],
+      ["復唱励行", "ふくしょうれいこう", "Pelaksanaan Perintah Ulang"],
+      ["点検励行", "てんけんれいこう", "Pelaksanaan Pemeriksaan"],
+      ["指差呼称励行", "ゆびさしこしょうれいこう", "Melaksanakan Dengan Menunjuk Jari"],
+      ["ゴーグル着用", "ゴーグルちゃくよう", "Kenakan Kacamata Pelindung"],
+      ["天地無用", "てんちむよう", "Jangan Bolak-Balik"],
+      ["保護具着用", "ほごぐちゃくよう", "Kenakan Alat Pelindung"],
+      ["保護帽着用", "ほごぼうちゃくよう", "Kenakan Pelindung Kepala"],
+      ["清掃清潔", "せいそうせいけつ", "Menjaga Kebersihan"],
+      ["整理整頓", "せいりせいとん", "Penyusunan Membereskan"],
+      ["停止確認", "ていしかくにん", "Pemastian Berhenti"],
+      ["合図確認", "あいずかくにん", "Memastikan Isyarat"],
+      ["左右確認", "さゆうかくにん", "Pastikan Kanan Kiri"],
+      ["作業手順確認", "さぎょうてじゅんかくにん", "Mengecek Urutan Pekerjaan"],
+      ["足元注意", "あしもとちゅうい", "Hati-hati Melangkah"],
+      ["取扱注意", "とりあつかいちゅうい", "Penanganan dengan Hati-hati"],
+      ["開口部注意", "かいこうぶちゅうい", "Awas Lubang"],
+      ["頭上注意", "ずじょうちゅうい", "Hati-hati Sebelah Atas"],
+      ["高圧注意", "こうあつちゅうい", "Awas Tegangan Tinggi"],
+      ["感電注意", "かんでんちゅうい", "Hati-hati Kena Listrik"],
+      ["注意", "ちゅうい", "Hati-hati/Awas"],
+      ["有害物", "ゆうがいぶつ", "Benda Merugikan"],
+      ["毒劇物", "どくげきぶつ", "Benda Beracun"],
+      ["危険物", "きけんぶつ", "Benda Berbahaya"]
+    ];
+
+    // File 2: Perubahan Kata Kerja LPKS X JAPAN.pdf (Exact text preserved)
+    // Format: [Kelompok, Kanji, Bentuk ます, Bentuk て, Bentuk Kamus, Bentuk ない, Bentuk た, Arti]
+    const RAW_KATA_KERJA = [
+      // Kelompok 1
+      ["Kelompok 1", "会います", "あいます", "あって", "あう", "あわない", "あった", "Bertemu"],
+      ["Kelompok 1", "遊びます", "あそびます", "あそんで", "あそぶ", "あそばない", "あそんだ", "Bermain"],
+      ["Kelompok 1", "洗います", "あらいます", "あらって", "あらう", "あらわない", "あらった", "Mencuci"],
+      ["Kelompok 1", "あります", "あります", "あって", "ある", "ない", "あった", "Ada, Mempunyai"],
+      ["Kelompok 1", "歩きます", "あるきます", "あるいて", "あるく", "あるかない", "あるいた", "Berjalan kaki"],
+      ["Kelompok 1", "言います", "いいます", "いって", "いう", "いわない", "いった", "Mengatakan, Berkata"],
+      ["Kelompok 1", "行きます", "いきます", "いって", "いく", "いかない", "いった", "Pergi"],
+      ["Kelompok 1", "急ぎます", "いそぎます", "いそいで", "いそぐ", "いそがない", "いそいだ", "Buru-buru"],
+      ["Kelompok 1", "要ります", "いります", "いって", "いる", "いらない", "いった", "Memerlukan"],
+      ["Kelompok 1", "動きます", "うごきます", "うごいて", "うごく", "うごかない", "うごいた", "Pindah, Bergerak"],
+      ["Kelompok 1", "歌います", "うたいます", "うたって", "うたう", "うたわない", "うたった", "Bernyanyi, Menyanyi"],
+      ["Kelompok 1", "売ります", "うります", "うって", "うる", "うらない", "うった", "Menjual"],
+      ["Kelompok 1", "置きます", "おきます", "おいて", "おく", "おかない", "おいた", "Meletakkan, Menaruh"],
+      ["Kelompok 1", "送ります", "おくります", "おくって", "おくる", "おくらない", "おくった", "Mengirim, mengantar"],
+      ["Kelompok 1", "押します", "おします", "おして", "おす", "おさない", "おした", "Menekan"],
+      ["Kelompok 1", "思い出します", "おもいだします", "おもいだして", "おもいだす", "おもいださない", "おもいだした", "Teringat"],
+      ["Kelompok 1", "思います", "おもいます", "おもって", "おもう", "おもわない", "おもった", "Mengira, Berpikir"],
+      ["Kelompok 1", "泳ぎます", "およぎます", "およいで", "およぐ", "およがない", "およいだ", "Berenang"],
+      ["Kelompok 1", "下ろします", "おろします", "おろして", "おろす", "おろさない", "おろした", "Mengeluarkan/Mengambil"],
+      ["Kelompok 1", "終わります", "おわります", "おわって", "おわる", "おわらない", "おわった", "Selesai"],
+      ["Kelompok 1", "買います", "かいます", "かって", "かう", "かわない", "かった", "Membeli"],
+      ["Kelompok 1", "返します", "かえします", "かえして", "かえす", "かえさない", "かえした", "Mengembalikan"],
+      ["Kelompok 1", "帰ります", "かえります", "かえって", "かえる", "かえらない", "かえった", "Pulang"],
+      ["Kelompok 1", "かかります", "かかります", "かかって", "かかる", "かからない", "かかった", "Memakan, perlu"],
+      ["Kelompok 1", "書きます", "かきます", "かいて", "かく", "かかない", "かいた", "Menulis, Menggambar"],
+      ["Kelompok 1", "貸します", "かします", "かして", "かす", "かさない", "かした", "Meminjamkan, menyewakan"],
+      ["Kelompok 1", "勝ちます", "かちます", "かって", "かつ", "かたない", "かった", "Menang"],
+      ["Kelompok 1", "かぶります", "かぶります", "かぶって", "かぶる", "かぶらない", "かぶった", "Memakai (topi)"],
+      ["Kelompok 1", "頑張ります", "がんばります", "がんばって", "がんばる", "がんばらない", "がんばった", "Berusaha, Bekerja Keras"],
+      ["Kelompok 1", "聞きます", "ききます", "きいて", "きく", "きかない", "きいた", "Mendengar"],
+      ["Kelompok 1", "切ります", "きります", "きって", "きる", "きらない", "きった", "Memotong, Menggunting"],
+      ["Kelompok 1", "消します", "けします", "けして", "けす", "けさない", "けした", "Mematikan, memadamkan"],
+      ["Kelompok 1", "触ります", "さわります", "さわって", "さわる", "さわらない", "さわった", "Menyentuh"],
+      ["Kelompok 1", "知ります", "しります", "しって", "しる", "しらない", "しった", "Mengetahui, mengenal"],
+      ["Kelompok 1", "吸います", "すいます", "すって", "すう", "すわない", "すった", "Menghisap, merokok"],
+      ["Kelompok 1", "住みます", "すみます", "すんで", "すむ", "すまない", "すんだ", "Tinggal"],
+      ["Kelompok 1", "座ります", "すわります", "すわって", "すわる", "すわらない", "すわった", "Duduk"],
+      ["Kelompok 1", "出します", "だします", "だして", "だす", "ださない", "だした", "Mengeluarkan, Menyerahkan, Mengirimkan"],
+      ["Kelompok 1", "立ちます", "たちます", "たって", "たつ", "たたない", "たった", "Berdiri"],
+      ["Kelompok 1", "使います", "つかいます", "つかって", "つかう", "つかわない", "つかった", "Memakai"],
+      ["Kelompok 1", "着きます", "つきます", "ついて", "つく", "つかない", "ついた", "Tiba, sampai"],
+      ["Kelompok 1", "作ります", "つくります", "つくって", "つくる", "つくらない", "つくった", "Membuat"],
+      ["Kelompok 1", "連れて行きます", "つれていきます", "つれていって", "つれていく", "つれていかない", "つれていった", "Membawa, Mengajak Pergi"],
+      ["Kelompok 1", "手伝います", "てつだいます", "てつだって", "てつだう", "てつだわない", "てつだった", "Membantu"],
+      ["Kelompok 1", "泊まります", "とまります", "とまって", "とまる", "とまらない", "とまった", "Menginap"],
+      ["Kelompok 1", "取ります", "とります", "とって", "とる", "とらない", "とった", "Mengambil"],
+      ["Kelompok 1", "撮ります", "とります", "とって", "とる", "とらない", "とった", "Mengambil (Foto)"],
+      ["Kelompok 1", "取ります", "とります", "とって", "とる", "とらない", "とった", "Berumur, Lanjut usia"],
+      ["Kelompok 1", "直します", "なおします", "なおして", "なおす", "なおさない", "なおした", "Mengoreksi"],
+      ["Kelompok 1", "無くします", "なくします", "なくして", "なくす", "なくさない", "なくした", "Kehilangan"],
+      ["Kelompok 1", "習います", "ならいます", "ならって", "ならう", "ならわない", "ならった", "Belajar"],
+      ["Kelompok 1", "なります", "なります", "なって", "なる", "ならない", "なった", "Menjadi"],
+      ["Kelompok 1", "脱ぎます", "ぬぎます", "ぬいで", "ぬぐ", "ぬがない", "ぬいだ", "Buka (Baju, sepatu, dll)"],
+      ["Kelompok 1", "登ります", "のぼります", "のぼって", "のぼる", "のぼらない", "のぼった", "Naik (Mendaki, dll)"],
+      ["Kelompok 1", "飲みます", "のみます", "のんで", "のむ", "のまない", "のんだ", "Minum"],
+      ["Kelompok 1", "乗ります", "のります", "のって", "のる", "のらない", "のった", "Naik (Kereta, dll)"],
+      ["Kelompok 1", "入ります", "はいります", "はいって", "はいる", "はいらない", "はいった", "Masuk"],
+      ["Kelompok 1", "履きます", "はきます", "はいて", "はく", "はかない", "はいた", "Memakai (Sepatu, Celana)"],
+      ["Kelompok 1", "働きます", "はたらきます", "はたらいて", "はたらく", "はたらかない", "はたらいた", "Bekerja"],
+      ["Kelompok 1", "話します", "はなします", "はなして", "はなす", "はなさない", "はなした", "Berbicara"],
+      ["Kelompok 1", "払います", "はらいます", "はらって", "はらう", "はらわない", "はらった", "Membayar"],
+      ["Kelompok 1", "弾きます", "ひきます", "ひいて", "ひく", "ひかない", "ひいた", "Bermain (Alat musik senar, Piano)"],
+      ["Kelompok 1", "引きます", "ひきます", "ひいて", "ひく", "ひかない", "ひいた", "Tarik"],
+      ["Kelompok 1", "降ります", "ふります", "ふって", "ふる", "ふらない", "ふった", "Turun (Hujan)"],
+      ["Kelompok 1", "曲がります", "まがります", "まがって", "まがる", "まがらない", "まがった", "Belok"],
+      ["Kelompok 1", "待ちます", "まちます", "まって", "まつ", "またない", "まった", "Menunggu"],
+      ["Kelompok 1", "回します", "まわします", "まわして", "まわす", "まわさない", "まわした", "Memutar"],
+      ["Kelompok 1", "持ちます", "もちます", "もって", "もつ", "もたない", "もった", "Membawa"],
+      ["Kelompok 1", "持って行きます", "もっていきます", "もっていって", "もっていく", "もっていかない", "もっていった", "Membawa pergi"],
+      ["Kelompok 1", "もらいます", "もらいます", "もらって", "もらう", "もらわない", "もらった", "Mendapatkan, Menerima"],
+      ["Kelompok 1", "役に立ちます", "やくにたちます", "やくにたって", "やくにたつ", "やくにたたない", "やくにたった", "Berguna, bermanfaat"],
+      ["Kelompok 1", "休みます", "やすみます", "やすんで", "やすむ", "やすまない", "やすんだ", "Beristirahat, Libur"],
+      ["Kelompok 1", "呼びます", "よびます", "よんで", "よぶ", "よばない", "よんだ", "Memanggil"],
+      ["Kelompok 1", "読みます", "よみます", "よんで", "よむ", "よまない", "よんだ", "Membaca"],
+      ["Kelompok 1", "わかります", "わかります", "わかって", "わかる", "わからない", "わかった", "Mengerti"],
+      ["Kelompok 1", "渡ります", "わたります", "わたって", "わたる", "わたらない", "わたった", "Menyebrang"],
+
+      // Kelompok II
+      ["Kelompok II", "開けます", "あけます", "あけて", "あける", "あけない", "あけた", "Membuka"],
+      ["Kelompok II", "あげます", "あげます", "あげて", "あげる", "あげない", "あげた", "Memberikan"],
+      ["Kelompok II", "集めます", "あつめます", "あつめて", "あつめる", "あつめない", "あつめた", "Mengumpulkan"],
+      ["Kelompok II", "浴びます", "あびます", "あびて", "あびる", "あびない", "あびた", "Mandi"],
+      ["Kelompok II", "居ます", "います", "いて", "いる", "いない", "いた", "Ada (Makhluk hidup)"],
+      ["Kelompok II", "入れます", "いれます", "いれて", "いれる", "いれない", "いれた", "Memasukkan"],
+      ["Kelompok II", "生まれます", "うまれます", "うまれて", "うまれる", "うまれない", "うまれた", "Lahir"],
+      ["Kelompok II", "起きます", "おきます", "おきて", "おきる", "おきない", "おきた", "Bangun"],
+      ["Kelompok II", "教えます", "おしえます", "おしえて", "おしえる", "おしえない", "おしえた", "Mengajar, Memberitahukan"],
+      ["Kelompok II", "覚えます", "おぼえます", "おぼえて", "おぼえる", "おぼえない", "おぼえた", "Mengingat, Menghafal"],
+      ["Kelompok II", "降ります", "おります", "おりて", "おりる", "おりない", "おりた", "Turun"],
+      ["Kelompok II", "買えます", "かえます", "かえて", "かえる", "かえない", "かえた", "Mengganti, Menukar"],
+      ["Kelompok II", "変えます", "かえます", "かえて", "かえる", "かえない", "かえた", "Mengubah"],
+      ["Kelompok II", "掛けます", "かけます", "かけて", "かける", "かけない", "かけた", "Menelepon, Memakai, Mengunci"],
+      ["Kelompok II", "借ります", "かります", "かりて", "かりる", "かりない", "かりた", "Meminjam, Menyewa"],
+      ["Kelompok II", "考えます", "かんがえます", "かんがえて", "かんがえる", "かんがえない", "かんがえた", "Berpikir, Memikirkan"],
+      ["Kelompok II", "着ます", "きます", "きて", "きる", "きない", "きた", "Memakai (Kemeja)"],
+      ["Kelompok II", "気をつけます", "きをつけます", "きをつけて", "きをつける", "きをつけない", "きをつけた", "Berwaspada, berhati-hati"],
+      ["Kelompok II", "くれます", "くれます", "くれて", "くれる", "くれない", "くれた", "Diberikan"],
+      ["Kelompok II", "閉めます", "しめます", "しめて", "しめる", "しめない", "しめた", "Menutup"],
+      ["Kelompok II", "調べます", "しらべます", "しらべて", "しらべる", "しらべない", "しらべた", "Memeriksa, Meneliti"],
+      ["Kelompok II", "捨てます", "すてます", "すてて", "すてる", "すてない", "すてた", "Membuang"],
+      ["Kelompok II", "食べます", "たべます", "たべて", "たべる", "たべない", "たべた", "Makan"],
+      ["Kelompok II", "足ります", "たります", "たりて", "たりる", "たりない", "たりた", "Cukup"],
+      ["Kelompok II", "疲れます", "つかれます", "つかれて", "つかれる", "つかれない", "つかれた", "Lelah"],
+      ["Kelompok II", "つけます", "つけます", "つけて", "つける", "つけない", "つけた", "Menyalakan, Memasang, Menghidupkan"],
+      ["Kelompok II", "出かけます", "でかけます", "でかけて", "でかける", "でかけない", "でかけた", "Pergi, Keluar, Berangkat"],
+      ["Kelompok II", "出来ます", "できます", "できて", "できる", "できない", "できた", "Dapat, Bisa, Mampu"],
+      ["Kelompok II", "出ます", "でます", "でて", "でる", "でない", "出た", "Keluar"],
+      ["Kelompok II", "止めます", "とめます", "とめて", "とめる", "とめない", "とめた", "Menghentikan, Memarkir"],
+      ["Kelompok II", "寝ます", "ねます", "ねて", "ねる", "ねない", "ねた", "Tidur"],
+      ["Kelompok II", "乗り換えます", "のりかえます", "のりかえて", "のりかえる", "のりかえない", "のりかえた", "Ganti, Transit, Pindah Kereta"],
+      ["Kelompok II", "始めます", "はじめます", "はじめて", "はじめる", "はじめない", "はじめた", "Mulai"],
+      ["Kelompok II", "負けます", "まけます", "まけて", "まける", "まけない", "まけた", "Kalah"],
+      ["Kelompok II", "見せます", "みせます", "みせて", "みせる", "みせない", "みせた", "Memperlihatkan"],
+      ["Kelompok II", "見ます", "みます", "みて", "みる", "みない", "みた", "Melihat, Menonton"],
+      ["Kelompok II", "迎えます", "むかえます", "むかえて", "むかえる", "むかえない", "むかえた", "Menjemput"],
+      ["Kelompok II", "やめます", "やめます", "やめて", "やめる", "やめない", "やめた", "Berhenti"],
+      ["Kelompok II", "忘れます", "わすれます", "わすれて", "わすれる", "わすれない", "わすれた", "Lupa"],
+
+      // Kelompok III
+      ["Kelompok III", "案内します", "あんないします", "あんないして", "あんないする", "あんないしない", "あんないした", "Mengantarkan"],
+      ["Kelompok III", "運転します", "うんてんします", "うんてんして", "うんてんする", "うんてんしない", "うんてんした", "Menyetir, Mengendarai"],
+      ["Kelompok III", "買い物します", "かいものします", "かいものして", "かいものする", "かいものしない", "かいものした", "Berbelanja"],
+      ["Kelompok III", "来ます", "きます", "きて", "くる", "こない", "きた", "Datang"],
+      ["Kelompok III", "結婚します", "けっこんします", "けっこんして", "けっこんする", "けっこんしない", "けっこんした", "Menikah"],
+      ["Kelompok III", "見学します", "けんがくします", "けんがくして", "けんがくする", "けんがくしない", "けんがくした", "Mengunjungi"],
+      ["Kelompok III", "研究します", "けんきゅうします", "けんきゅうして", "けんきゅうする", "けんきゅうしない", "けんきゅうした", "Meneliti"],
+      ["Kelompok III", "コピーします", "コピーします", "コピーして", "コピーする", "コピーしない", "コピーした", "Menyalin, Memfotokopi"],
+      ["Kelompok III", "散歩します", "さんぽします", "さんぽして", "さんぽする", "さんぽしない", "さんぽした", "Berjalan-jalan"],
+      ["Kelompok III", "残業します", "ざんぎょうします", "ざんぎょうして", "ざんぎょうする", "ざんぎょうしない", "ざんぎょうした", "Kerja Lembur"],
+      ["Kelompok III", "します", "します", "して", "する", "しない", "した", "Mengerjakan, Melakukan"],
+      ["Kelompok III", "します", "します", "して", "する", "しない", "した", "Memakai (Dasi)"],
+      ["Kelompok III", "修理します", "しゅうりします", "しゅうりして", "しゅうりする", "しゅうりしない", "しゅうりした", "Memperbaiki"],
+      ["Kelompok III", "出張します", "しゅっちょうします", "しゅっちょうして", "しゅっちょうする", "しゅっちょうしない", "しゅっちょうした", "Dinas"],
+      ["Kelompok III", "紹介します", "しょうかいします", "しょうかいして", "しょうかいする", "しょうかいしない", "しょうかいした", "Memperkenalkan"],
+      ["Kelompok III", "食事します", "しょくじします", "しょくじして", "しょくじする", "しょくじしない", "しょくじした", "Makan"],
+      ["Kelompok III", "心配します", "しんぱいします", "しんぱいして", "しんぱいする", "しんぱいしない", "しんぱいした", "Mengkhawatirkan"],
+      ["Kelompok III", "説明します", "せつめいします", "せつめいして", "せつめいする", "せつめいしない", "せつめいした", "Menjelaskan, Menerangkan"],
+      ["Kelompok III", "洗濯します", "せんたくします", "せんたくして", "せんたくする", "せんたくしない", "せんたくした", "Mencuci Pakaian"],
+      ["Kelompok III", "掃除します", "そうじします", "そうじして", "そうじする", "そうじしない", "そうじした", "Membersihkan"],
+      ["Kelompok III", "連れて来ます", "つれてきます", "つれてきて", "つれてくる", "つれてこない", "つれてきた", "Membawa datang, Mengajak datang"],
+      ["Kelompok III", "電話します", "でんわします", "でんわして", "でんわする", "でんわしない", "でんわした", "Menelepon"],
+      ["Kelompok III", "勉強します", "べんきょうします", "べんきょうして", "べんきょうする", "べんきょうしない", "べんきょうした", "Belajar"],
+      ["Kelompok III", "持って来ます", "もってきます", "もってきて", "もってくる", "もってこない", "もってきた", "Membawa datang"],
+      ["Kelompok III", "予約します", "よやくします", "よやくして", "よやくする", "よやくしない", "よやくした", "Memesan"],
+      ["Kelompok III", "留学します", "りゅうがくします", "りゅうがくして", "りゅうがくする", "りゅうがくしない", "りゅうがくした", "Studi di luar negeri"]
+    ];
+
+    // File 3: KANJI_N5.txt (Exact lines preserved)
+    const RAW_KANJI_N5 = [
+      "一","二","三","四","五","六","八","九","十",
+      "一つ","二つ","三つ","四つ","五つ","六つ","七つ","八つ","九つ",
+      "一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月",
+      "一日","二日","三日","四日","五日","六日","七日","八日","九日","十日","十一日","十四日","十九日","二十日",
+      "百","二百","三百","四百","五百","六百","七百","八百","九百",
+      "千","二千","三千","四千","五千","六千","七千","八千","九千",
+      "万","一万","二万","三万","四万","五万","六万","七万","八万","九万","十万","万ねんひつ",
+      "八百七十円","円い",
+      "時間","時計","一時","二時","三時","四時","五時","六時","七時","八時","九時","十時","十一時","十二時",
+      "間","一時間","二時間","三時間","四時間","五時間","六時間","七時間","八時間","九時間","十時間",
+      "一分","二分","三分","四分","五分","六分","七分","八分","九分","十分","半分","分かります","二時半","四時半","二時間半","四時間半",
+      "日本人","今日","日よう日",
+      "月","月よう日","一か月",
+      "火","火よう日",
+      "水","水よう日",
+      "木","木よう日",
+      "金","金よう日","お金",
+      "土","土よう日",
+      "本","一本","二本","三本","四本","五本","六本","七本","八本","九本","十本","百本",
+      "人","日本人","一人","二人","三人","四人",
+      "今","今日","今月","今週","今年",
+      "每日","每週","每月","每年","一週間","先週","来週",
+      "2010年","きょ年","先月",
+      "先生","生まれます","たん生日",
+      "来ます","来る","来ない","来月",
+      "朝","朝ごはん","昼","昼休み","昼ごはん","晚","今晚","晩ごはん",
+      "休みます","休み",
+      "午前","午後","前","四年前","十年前","後ろ","後で","午後",
+      "中","一日中","午前中",
+      "上","上がります","下","下がります",
+      "外","外国","外国人","国一","中国",
+      "右","右手","左","左手","手","手紙","上手","紙",
+      "学生","学校","大学",
+      "大きい","小さい",
+      "父","お父さん","母","お母さん","子ども","男","男の子","女","女の子","友だち",
+      "電車","電気","車","天気",
+      "話","話します","会話",
+      "会社","社長","駅","道","店",
+      "空","空","空気",
+      "ふじ山","川","雨花","魚","耳",
+      "入口","口","出口","人口",
+      "銀","行きます",
+      "東きょう","東","西","南","北",
+      "新しい","新聞","聞きます","聞こえます","古い",
+      "何","何人","何人","何語","何時",
+      "日本語","インドネシア語","外国語",
+      "高い","安い","安ぜん","長い","社長","短い","遠い","近い","多い","少ない","少し",
+      "明るい","明日","暗い","夜",
+      "名前","有名","有ります",
+      "白","黒","赤","青",
+      "見ます","見せます","食べます","食べもの","食どう","飲みます","飲みもの","買います","買いもの",
+      "入れます","入口","出します","出口",
+      "書きます","じ書","読みます","読書",
+      "研修生","実習生","豚肉","鶏肉","牛肉","酒"
+    ];
+
+    // Build unified cards array
+    const ALL_CARDS = [];
+
+    RAW_LARANGAN.forEach((item, idx) => {
+      ALL_CARDS.push({
+        id: `larangan_${idx}`,
+        deck: 'larangan',
+        type: 'larangan',
+        front: item[0],
+        reading: item[1],
+        meaning: item[2]
+      });
+    });
+
+    RAW_KATA_KERJA.forEach((item, idx) => {
+      ALL_CARDS.push({
+        id: `katakerja_${idx}`,
+        deck: 'katakerja',
+        type: 'katakerja',
+        group: item[0],
+        front: item[1],
+        masu: item[2],
+        te: item[3],
+        kamus: item[4],
+        nai: item[5],
+        ta: item[6],
+        meaning: item[7]
+      });
+    });
+
+    RAW_KANJI_N5.forEach((item, idx) => {
+      ALL_CARDS.push({
+        id: `kanjin5_${idx}`,
+        deck: 'kanjin5',
+        type: 'kanjin5',
+        front: item,
+        reading: '',
+        meaning: '(Kosakata KANJI N5 — uji cara baca & artinya)'
+      });
+    });
+
+    // =========================================================================
+    // 2. SPACED REPETITION ENGINE (ANKI SM-2 ALGORITHM) & STATE
+    // =========================================================================
+    const STORAGE_KEY = 'nihongoflow_srs_v1';
+    const NOTES_KEY = 'nihongoflow_notes_v1';
+    let srsData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    let userNotes = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}');
+
+    function getCardSRS(cardId) {
+      return srsData[cardId] || {
+        reps: 0,
+        interval: 0, // in days (fractional for minutes)
+        ease: 2.5,
+        due: 0,
+        status: 'new' // 'new' | 'learning' | 'review'
+      };
+    }
+
+    function saveSRS() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(srsData));
+    }
+
+    function saveUserNote(cardId, value) {
+      userNotes[cardId] = value;
+      localStorage.setItem(NOTES_KEY, JSON.stringify(userNotes));
+    }
+
+    // Calculate next interval preview & actual update
+    function calculateNextSRS(srs, rating) {
+      // rating: 1 (Again), 2 (Hard), 3 (Good), 4 (Easy)
+      let { reps, interval, ease } = srs;
+      const now = Date.now();
+      const MINUTE = 60 * 1000;
+      const DAY = 24 * 60 * MINUTE;
+
+      let nextIntervalDays = 0;
+      let nextStatus = 'learning';
+      let label = '';
+
+      if (rating === 1) {
+        // Again
+        reps = 0;
+        interval = 0;
+        ease = Math.max(1.3, ease - 0.2);
+        nextIntervalDays = (1 / 1440); // 1 minute
+        nextStatus = 'learning';
+        label = '< 1 mnt';
+      } else if (rating === 2) {
+        // Hard
+        if (reps === 0) {
+          nextIntervalDays = 6 / 1440; // 6 mins
+          label = '6 mnt';
+        } else {
+          nextIntervalDays = Math.max(1, interval * 1.2);
+          label = formatDays(nextIntervalDays);
+        }
+        ease = Math.max(1.3, ease - 0.15);
+        nextStatus = nextIntervalDays >= 1 ? 'review' : 'learning';
+      } else if (rating === 3) {
+        // Good
+        if (reps === 0) {
+          nextIntervalDays = 10 / 1440; // 10 mins
+          reps = 1;
+          nextStatus = 'learning';
+          label = '10 mnt';
+        } else if (reps === 1) {
+          nextIntervalDays = 1;
+          reps = 2;
+          nextStatus = 'review';
+          label = '1 hari';
+        } else {
+          nextIntervalDays = Math.round(interval * ease);
+          reps += 1;
+          nextStatus = 'review';
+          label = formatDays(nextIntervalDays);
+        }
+      } else if (rating === 4) {
+        // Easy
+        if (reps === 0) {
+          nextIntervalDays = 4;
+          reps = 2;
+          label = '4 hari';
+        } else {
+          nextIntervalDays = Math.round(interval * ease * 1.3) + 1;
+          reps += 1;
+          label = formatDays(nextIntervalDays);
+        }
+        ease += 0.15;
+        nextStatus = 'review';
+      }
+
+      return {
+        reps,
+        interval: nextIntervalDays,
+        ease,
+        due: now + nextIntervalDays * DAY,
+        status: nextStatus,
+        label
+      };
+    }
+
+    function formatDays(days) {
+      if (days < 1) return Math.round(days * 1440) + ' mnt';
+      if (days < 30) return Math.round(days) + ' hari';
+      if (days < 365) return (days / 30).toFixed(1).replace('.0', '') + ' bln';
+      return (days / 365).toFixed(1).replace('.0', '') + ' thn';
+    }
+
+    // =========================================================================
+    // 3. DASHBOARD & NAVIGATION
+    // =========================================================================
+    function switchView(viewName) {
+      ['dashboard', 'study', 'browse'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        const btn = document.getElementById(`nav-${v}`);
+        if (btn) {
+          btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-900', 'dark:text-white');
+          btn.classList.add('text-slate-600', 'dark:text-slate-400');
+        }
+      });
+
+      document.getElementById(`view-${viewName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`nav-${viewName}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-900', 'dark:text-white');
+        activeBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
+      }
+
+      if (viewName === 'dashboard') renderDashboard();
+      if (viewName === 'browse') renderBrowseTable();
+    }
+
+    function renderDashboard() {
+      const now = Date.now();
+      let totalDue = 0, totalNew = 0, totalLearning = 0, totalMastered = 0;
+
+      ALL_CARDS.forEach(c => {
+        const s = getCardSRS(c.id);
+        if (s.status === 'new') {
+          totalNew++;
+        } else {
+          if (s.due <= now) totalDue++;
+          if (s.interval >= 7) totalMastered++;
+          else totalLearning++;
+        }
+      });
+
+      document.getElementById('stat-due').textContent = totalDue;
+      document.getElementById('stat-new').textContent = totalNew;
+      document.getElementById('stat-learning').textContent = totalLearning;
+      document.getElementById('stat-mastered').textContent = totalMastered;
+
+      const container = document.getElementById('decks-container');
+      container.innerHTML = '';
+
+      DECKS.forEach(deck => {
+        const deckCards = ALL_CARDS.filter(c => c.deck === deck.id);
+        let dNew = 0, dDue = 0, dMastered = 0;
+
+        deckCards.forEach(c => {
+          const s = getCardSRS(c.id);
+          if (s.status === 'new') dNew++;
+          else {
+            if (s.due <= now) dDue++;
+            if (s.interval >= 7) dMastered++;
+          }
+        });
+
+        const pct = Math.round(((deckCards.length - dNew) / deckCards.length) * 100);
+
+        const cardEl = document.createElement('div');
+        cardEl.className = "bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all";
+        cardEl.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">${deck.badge}</span>
+              <span class="text-xs text-slate-400 font-medium">${deckCards.length} Kartu</span>
+            </div>
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white leading-snug">${deck.title}</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">${deck.subtitle}</p>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <div class="flex items-center justify-between text-xs mb-2">
+              <span class="text-slate-500">Progres Dipelajari</span>
+              <span class="font-semibold text-slate-700 dark:text-slate-300">${pct}%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mb-4">
+              <div class="h-full bg-indigo-600 rounded-full" style="width: ${pct}%"></div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex gap-2 text-xs font-semibold">
+                <span class="px-2 py-1 rounded bg-sky-50 text-sky-600 dark:bg-sky-950/60 dark:text-sky-400">${dNew} Baru</span>
+                <span class="px-2 py-1 rounded bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400">${dDue} Ulang</span>
+              </div>
+              <button onclick="startStudy('${deck.id}')" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-semibold transition-colors">
+                Mulai Belajar →
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(cardEl);
+      });
+    }
+
+    // =========================================================================
+    // 4. STUDY SESSION LOGIC
+    // =========================================================================
+    let currentDeckFilter = 'ALL';
+    let studyQueue = [];
+    let initialQueueCount = 0;
+    let currentCard = null;
+    let isFlipped = false;
+
+    function startStudy(deckId, cramMode = false) {
+      currentDeckFilter = deckId;
+      const now = Date.now();
+      const pool = deckId === 'ALL' ? ALL_CARDS : ALL_CARDS.filter(c => c.deck === deckId);
+
+      if (cramMode) {
+        studyQueue = [...pool].sort(() => Math.random() - 0.5).slice(0, 30);
+      } else {
+        const dueCards = pool.filter(c => {
+          const s = getCardSRS(c.id);
+          return s.status !== 'new' && s.due <= now;
+        });
+        // Limit new cards per session to 20 (Anki standard) so it's digestible
+        const newCards = pool.filter(c => getCardSRS(c.id).status === 'new').slice(0, 20);
+        studyQueue = [...dueCards, ...newCards];
+      }
+
+      initialQueueCount = studyQueue.length;
+      switchView('study');
+      loadNextCard();
+    }
+
+    function practiceAhead() {
+      startStudy(currentDeckFilter, true);
+    }
+
+    function updateQueueCounters() {
+      let qNew = 0, qLearn = 0, qRev = 0;
+      studyQueue.forEach(c => {
+        const s = getCardSRS(c.id);
+        if (s.status === 'new') qNew++;
+        else if (s.status === 'learning') qLearn++;
+        else qRev++;
+      });
+      document.getElementById('queue-new').textContent = qNew;
+      document.getElementById('queue-learn').textContent = qLearn;
+      document.getElementById('queue-review').textContent = qRev;
+
+      const done = Math.max(0, initialQueueCount - studyQueue.length);
+      const pct = initialQueueCount > 0 ? Math.min(100, Math.round((done / initialQueueCount) * 100)) : 100;
+      document.getElementById('study-progress-bar').style.width = `${pct}%`;
+    }
+
+    function loadNextCard() {
+      updateQueueCounters();
+      isFlipped = false;
+
+      if (studyQueue.length === 0) {
+        document.getElementById('flashcard-area').classList.add('hidden');
+        document.getElementById('study-complete').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('flashcard-area').classList.remove('hidden');
+      document.getElementById('study-complete').classList.add('hidden');
+      document.getElementById('card-back').classList.add('hidden');
+      document.getElementById('controls-front').classList.remove('hidden');
+      document.getElementById('controls-back').classList.add('hidden');
+
+      currentCard = studyQueue[0];
+      const srs = getCardSRS(currentCard.id);
+      const deckObj = DECKS.find(d => d.id === currentCard.deck);
+
+      document.getElementById('card-deck-badge').textContent = deckObj ? deckObj.title : currentCard.deck;
+      document.getElementById('card-status-badge').textContent =
+        srs.status === 'new' ? 'Kartu Baru' : (srs.status === 'learning' ? 'Sedang Dipelajari' : `Ulasan (Interval ${formatDays(srs.interval)})`);
+
+      document.getElementById('card-front-text').textContent = currentCard.front;
+      document.getElementById('card-number-label').textContent = `Sisa antrean: ${studyQueue.length} kartu`;
+
+      // Prepare Back Content based on card type (preserving exact source text)
+      const backEl = document.getElementById('card-back');
+      if (currentCard.type === 'larangan') {
+        backEl.innerHTML = `
+          <div class="text-center space-y-3">
+            <div class="font-jp text-xl sm:text-2xl font-medium text-indigo-600 dark:text-indigo-400">
+              ${currentCard.reading}
+            </div>
+            <div class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+              ${currentCard.meaning}
+            </div>
+          </div>
+        `;
+      } else if (currentCard.type === 'katakerja') {
+        backEl.innerHTML = `
+          <div class="space-y-4">
+            <div class="text-center">
+              <span class="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">${currentCard.group}</span>
+              <div class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-2">${currentCard.meaning}</div>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-left font-jp text-sm">
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+                <div class="text-[10px] font-sans uppercase text-slate-400">Bentuk ます</div>
+                <div class="font-bold text-slate-800 dark:text-slate-100 mt-0.5">${currentCard.masu}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+                <div class="text-[10px] font-sans uppercase text-slate-400">Bentuk て</div>
+                <div class="font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">${currentCard.te}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+                <div class="text-[10px] font-sans uppercase text-slate-400">Bentuk Kamus</div>
+                <div class="font-bold text-slate-800 dark:text-slate-100 mt-0.5">${currentCard.kamus}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
+                <div class="text-[10px] font-sans uppercase text-slate-400">Bentuk ない</div>
+                <div class="font-bold text-rose-600 dark:text-rose-400 mt-0.5">${currentCard.nai}</div>
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 col-span-2 sm:col-span-2">
+                <div class="text-[10px] font-sans uppercase text-slate-400">Bentuk た</div>
+                <div class="font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">${currentCard.ta}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (currentCard.type === 'kanjin5') {
+        const savedNote = userNotes[currentCard.id] || '';
+        backEl.innerHTML = `
+          <div class="text-center space-y-3" onclick="event.stopPropagation()">
+            <div class="text-sm text-slate-500 dark:text-slate-400">
+              Kosakata dari file <span class="font-semibold">KANJI_N5.txt</span>
+            </div>
+            <div class="max-w-sm mx-auto">
+              <label class="block text-left text-[11px] font-medium text-slate-400 mb-1">Catatan Bacaan / Arti Pribadi (Opsional):</label>
+              <input type="text" value="${savedNote.replace(/"/g, '&quot;')}" oninput="saveUserNote('${currentCard.id}', this.value)" placeholder="Ketik hiragana / arti untuk membantu hafalan..." class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+        `;
+      }
+
+      // Update SRS button interval previews
+      [1, 2, 3, 4].forEach(r => {
+        const preview = calculateNextSRS(srs, r);
+        document.getElementById(`int-${r}`).textContent = preview.label;
+      });
+    }
+
+    function flipCard() {
+      if (!currentCard || isFlipped) return;
+      isFlipped = true;
+      document.getElementById('card-back').classList.remove('hidden');
+      document.getElementById('controls-front').classList.add('hidden');
+      document.getElementById('controls-back').classList.remove('hidden');
+    }
+
+    function rateCard(rating) {
+      if (!currentCard || !isFlipped) return;
+
+      const prevSRS = getCardSRS(currentCard.id);
+      const nextSRS = calculateNextSRS(prevSRS, rating);
+      srsData[currentCard.id] = {
+        reps: nextSRS.reps,
+        interval: nextSRS.interval,
+        ease: nextSRS.ease,
+        due: nextSRS.due,
+        status: nextSRS.status
+      };
+      saveSRS();
+
+      // Remove from front of queue
+      const finishedCard = studyQueue.shift();
+
+      // If "Again" (1) or "Hard" (2) on new card, re-insert shortly in the same session like Anki!
+      if (rating === 1) {
+        const insertIdx = Math.min(2, studyQueue.length);
+        studyQueue.splice(insertIdx, 0, finishedCard);
+      } else if (rating === 2 && prevSRS.reps === 0) {
+        const insertIdx = Math.min(4, studyQueue.length);
+        studyQueue.splice(insertIdx, 0, finishedCard);
+      }
+
+      loadNextCard();
+    }
+
+    // =========================================================================
+    // 5. BROWSE TABLE
+    // =========================================================================
+    function renderBrowseTable() {
+      const deckFilter = document.getElementById('browse-deck-filter').value;
+      const query = document.getElementById('browse-search').value.toLowerCase().trim();
+      const tbody = document.getElementById('browse-table-body');
+
+      const filtered = ALL_CARDS.filter(c => {
+        if (deckFilter !== 'ALL' && c.deck !== deckFilter) return false;
+        if (!query) return true;
+        const searchable = [
+          c.front, c.reading, c.meaning, c.masu, c.te, c.kamus, c.nai, c.ta, userNotes[c.id]
+        ].filter(Boolean).join(' ').toLowerCase();
+        return searchable.includes(query);
+      });
+
+      tbody.innerHTML = filtered.slice(0, 200).map(c => {
+        const s = getCardSRS(c.id);
+        let detail = '';
+        if (c.type === 'larangan') detail = `<span class="font-jp">${c.reading}</span>`;
+        else if (c.type === 'katakerja') detail = `<span class="font-jp text-xs text-slate-500">${c.masu} ・ ${c.te} ・ ${c.kamus} ・ ${c.nai} ・ ${c.ta}</span>`;
+        else detail = `<span class="text-xs text-slate-400">${userNotes[c.id] || '-'}</span>`;
+
+        const statusBadge = s.status === 'new'
+          ? '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-sky-50 text-sky-600 dark:bg-sky-950 dark:text-sky-400">Baru</span>'
+          : (s.interval >= 7
+            ? '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400">Dikuasai</span>'
+            : '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400">Belajar</span>');
+
+        return `
+          <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+            <td class="py-3 px-4 font-jp font-bold text-base text-slate-900 dark:text-white">${c.front}</td>
+            <td class="py-3 px-4">${detail}</td>
+            <td class="py-3 px-4 text-slate-700 dark:text-slate-300">${c.meaning}</td>
+            <td class="py-3 px-4 text-xs text-slate-400">${c.deck.toUpperCase()}</td>
+            <td class="py-3 px-4 text-right">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // =========================================================================
+    // 6. UTILITIES (KEYBOARD SHORTCUTS, DARK MODE, RESET)
+    // =========================================================================
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('view-study').classList.contains('hidden')) return;
+      if (document.activeElement.tagName === 'INPUT') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (!isFlipped) flipCard();
+      } else if (isFlipped) {
+        if (e.key === '1') rateCard(1);
+        if (e.key === '2') rateCard(2);
+        if (e.key === '3') rateCard(3);
+        if (e.key === '4') rateCard(4);
+      }
+    });
+
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      localStorage.setItem('nihongoflow_theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+    }
+
+    function resetAllProgress() {
+      if (confirm('Yakin ingin menghapus seluruh riwayat Spaced Repetition dan mulai dari awal?')) {
+        srsData = {};
+        saveSRS();
+        renderDashboard();
+      }
+    }
+
+    // Init
+    if (localStorage.getItem('nihongoflow_theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
+    renderDashboard();
+  </script>
+</body>
+</html>
